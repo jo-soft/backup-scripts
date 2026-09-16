@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup Service
+
+[Service]
+Type=oneshot
+ExecStart=%h/bin/backup.sh
+TimeoutStartSec=30min
+
+[Install]
+WantedBy=default.target

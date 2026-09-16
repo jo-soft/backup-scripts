@@ -1,0 +1,85 @@
+# ==============================================================================
+# PORTABLE BACKUP CONFIGURATION
+# Copy this file to ~/.backup_config and adjust it for your machine.
+# ============================================================================== 
+
+# Local backup destination.
+LOCAL_BACKUP="${HOME}/backup"
+
+# Optional NAS or mounted external drive. Set AUTO_MOUNT=false if you do not use one.
+NAS_MOUNT="/mnt/backup-drive"
+NAS_BACKUP_DEST="${NAS_MOUNT}/backup/latest"
+AUTO_MOUNT=false
+
+# Directories to sync (relative to $HOME).
+SYNC_DIRS="
+src
+Documents
+bin
+"
+
+# Dotfiles to sync (relative to $HOME).
+SYNC_DOTFILES="
+.bashrc
+.profile
+.gitconfig
+.backup_config
+"
+
+# Sensitive credential folders to copy as-is.
+SYNC_SECRETS="
+.ssh
+.gnupg
+"
+
+# Configuration directory to back up.
+CONFIG_DIR="${HOME}/.config"
+
+# Lockfile used to avoid overlapping backup runs.
+LOCK_FILE="/tmp/backup.lock"
+
+# Rsync exclude patterns.
+EXCLUDE_RULES="
+# Development / build outputs
+**/node_modules/***
+**/target/***
+**/.venv/***
+**/venv/***
+**/__pycache__/***
+**/.cargo/registry/***
+**/.cargo/git/***
+**/.npm/***
+**/.dotnet/***
+**/.go/***
+*.pyc
+*.o
+*.so
+
+# IDE and editor caches
+**/.cache/***
+**/.idea/***
+**/.vscode/***
+**/.vs/***
+**/.cache/JetBrains/***
+**/.local/share/JetBrains/***
+
+# Browser caches
+**/google-chrome/Default/Cache/***
+**/google-chrome/Default/Code Cache/***
+**/google-chrome/Default/GPUCache/***
+**/firefox/*.default*/Cache/***
+**/firefox/*.default*/cache2/***
+**/chromium/Default/Cache/***
+**/chromium/Default/Code Cache/***
+**/chromium/Default/GPUCache/***
+
+# Temporary and local state
+**/tmp/***
+.bash_history
+.zsh_history
+.lesshst
+.wget-hsts
+.node_repl_history
+*.tmp
+*.bak
+"

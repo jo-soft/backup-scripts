@@ -1,0 +1,11 @@
+[Unit]
+Description=Trigger Backup 2min Post-Wake and Every 12 Hours
+
+[Timer]
+OnActiveSec=2min
+OnBootSec=2min
+OnUnitActiveSec=8h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
