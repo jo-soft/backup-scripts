@@ -7,7 +7,7 @@ This repository contains a small local backup workflow and an optional encrypted
 - `backup.sh` backs up selected directories, dotfiles, and config into a local directory.
 - `backup.service` and `backup.timer` install a user-level systemd timer on Linux.
 - `setup.sh` creates the local install and can optionally copy the archive helper to a remote host.
-- `zipAndEnc.sh` finds the n-th oldest backup set and creates a GPG-encrypted tar archive.
+- `zipAndEnc.sh` packs all rotated backup sets into one GPG-encrypted tar archive.
 
 ## Quick start
 
@@ -39,7 +39,7 @@ The config file is the main place to tune behavior. Update these values in `~/.b
 
 ## Optional remote encryption helper
 
-If you want to archive the newest rotated backup set to a remote host:
+If you want to archive the rotated backup sets on a remote host:
 
 1. Edit the example environment file:
    ```bash
@@ -48,7 +48,8 @@ If you want to archive the newest rotated backup set to a remote host:
 2. Fill in:
    - `GPG_BACKUP_KEY_ID`: the recipient key ID to encrypt to.
    - `PREFIX`: a short archive prefix.
-   - `N`: the numbered backup directory to archive.
+   - `GNUPGHOME` (optional): keyring directory. On QNAP, use a path outside `/root`.
+   - `KEEP_ARCHIVES` (optional): archives to keep, default 2.
 3. Deploy via:
    ```bash
    ./setup.sh --with-nas 192.168.1.50 --target-dir /mnt/backups/rotation --user admin

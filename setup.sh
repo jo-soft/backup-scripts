@@ -227,7 +227,7 @@ if [ "$INSTALL_NAS" = "true" ]; then
   echo "[setup] Copying zipAndEnc.env.example to remote target as zipAndEnc.env..."
   scp -o BatchMode=yes -o ConnectTimeout=10 -o ControlMaster=auto -o ControlPath="${SSH_CONTROL_SOCKET}" -o ControlPersist=60 "${REMOTE_TEMPLATE}" "${NAS_USER}@${NAS_IP}:${REMOTE_ENV}"
 
-  CRON_LINE="${CRON_SCHEDULE} /bin/sh ${NAS_SCRIPT_DEST}/zipAndEnc.sh ${NAS_TARGET_DIR} > /dev/null 2>&1"
+  CRON_LINE="${CRON_SCHEDULE} ${NAS_SCRIPT_DEST}/zipAndEnc.sh ${NAS_TARGET_DIR} >> ${NAS_TARGET_DIR}/zipAndEnc.log 2>&1"
   echo "[setup] Updating remote crontab with schedule: ${CRON_SCHEDULE}"
   ssh -o BatchMode=yes -o ConnectTimeout=10 -o ControlMaster=auto -o ControlPath="${SSH_CONTROL_SOCKET}" -o ControlPersist=60 "${NAS_USER}@${NAS_IP}" "bash -c '
     grep -Fq \"zipAndEnc.sh\" /etc/config/crontab || printf '%s\n' \"${CRON_LINE}\" >> /etc/config/crontab
