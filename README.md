@@ -60,3 +60,5 @@ If you want to archive the rotated backup sets on a remote host:
 - The repository is intentionally generic and does not assume a specific host, user, or NAS model.
 - The local timer is a user-level systemd service, so it works without root access.
 - If `systemctl` is unavailable, the installer prints the manual commands needed to enable the timer.
+- Files vanishing during a sync are tolerated. Any other rsync failure doesn't stop the remaining local syncs, but it skips the NAS sync and makes the run exit non-zero, so `systemctl --user status backup.service` shows it as failed.
+- With `AUTO_MOUNT=true`, a NAS that can't be reached within 30 seconds also fails the run, after the local backup has finished. With `AUTO_MOUNT=false`, an unmounted NAS is skipped.
