@@ -15,19 +15,29 @@ else
     exit 1
 fi
 
+# the backup is pruned to the synced sources, so a backup folder holding $HOME would delete it
+backup_root=$(realpath -m -- "$LOCAL_BACKUP")
+if [[ "$HOME/" == "${backup_root%/}/"* ]]; then
+    echo "Error: LOCAL_BACKUP must not contain $HOME: $LOCAL_BACKUP" >&2
+    exit 1
+fi
+
 RSYNC_FLAGS=(-aPc --delete --delete-excluded --quiet)
 LOCK_FILE="${LOCK_FILE:-/tmp/backup.lock}"
 NAS_TIMEOUT_SECONDS=30
 has_failed_sync=false
+synced_source_filters=()
 
 # the lock file stays: removing it would let a later run lock a new file while this one still runs
 exec 9>"$LOCK_FILE"
 flock -n 9 || exit 0
 
 EXCLUDE_FILE=$(mktemp "${TMPDIR:-/tmp}/backup-excludes.XXXXXX")
+EMPTY_DIR=$(mktemp -d "${TMPDIR:-/tmp}/backup-empty.XXXXXX")
 
 cleanup() {
     rm -f -- "$EXCLUDE_FILE"
+    rmdir -- "$EMPTY_DIR"
     echo "[backup] Cleanup complete"
 }
 trap cleanup EXIT
@@ -44,6 +54,10 @@ run_rsync() {
     fi
 }
 
+warn_missing_dir() {
+    echo "[backup] Warning: configured directory not found, its backup gets removed: $1" >&2
+}
+
 printf '%s\n' "$EXCLUDE_RULES" > "$EXCLUDE_FILE"
 mkdir -p "$LOCAL_BACKUP/dotfiles"
 
@@ -51,18 +65,25 @@ for dir in $SYNC_DIRS; do
     if [[ -d "$HOME/$dir" ]]; then
         echo "[backup] Syncing directory: $dir"
         mkdir -p "$LOCAL_BACKUP/$dir"
+        synced_source_filters+=(--filter="P /$dir/")
         run_rsync "${RSYNC_FLAGS[@]}" --exclude-from="$EXCLUDE_FILE" "$HOME/$dir/" "$LOCAL_BACKUP/$dir/"
+    else
+        warn_missing_dir "$HOME/$dir"
     fi
 done
 
 if [[ -d "$CONFIG_DIR" ]]; then
     echo "[backup] Syncing config: $CONFIG_DIR"
+    synced_source_filters+=(--filter="P /dotfiles/.config/")
     run_rsync "${RSYNC_FLAGS[@]}" --exclude-from="$EXCLUDE_FILE" "$CONFIG_DIR/" "$LOCAL_BACKUP/dotfiles/.config/"
+else
+    warn_missing_dir "$CONFIG_DIR"
 fi
 
 for file in $SYNC_DOTFILES; do
     if [[ -f "$HOME/$file" ]]; then
         echo "[backup] Syncing dotfile: $file"
+        synced_source_filters+=(--filter="P /dotfiles/$file")
         run_rsync "${RSYNC_FLAGS[@]}" "$HOME/$file" "$LOCAL_BACKUP/dotfiles/"
     fi
 done
@@ -71,9 +92,17 @@ for sec in $SYNC_SECRETS; do
     if [[ -d "$HOME/$sec" ]]; then
         echo "[backup] Syncing secret directory: $sec"
         mkdir -p "$LOCAL_BACKUP/dotfiles/$sec"
+        synced_source_filters+=(--filter="P /dotfiles/$sec/")
         run_rsync "${RSYNC_FLAGS[@]}" "$HOME/$sec/" "$LOCAL_BACKUP/dotfiles/$sec/"
+    else
+        warn_missing_dir "$HOME/$sec"
     fi
 done
+
+# sources dropped from the config or from $HOME would otherwise stay in the backup and on the NAS;
+# syncing an empty folder deletes everything except the sources synced above
+echo "[backup] Removing sources that are no longer synced"
+run_rsync -r --delete --quiet "${synced_source_filters[@]}" "$EMPTY_DIR/" "$LOCAL_BACKUP/"
 
 # the NAS sync deletes what the local backup lacks, so an incomplete local backup must not reach it
 if [[ "$has_failed_sync" == true ]]; then

@@ -29,8 +29,10 @@ This repository contains a small local backup workflow and an optional encrypted
 
 The config file is the main place to tune behavior. Update these values in `~/.backup_config`:
 
-- `LOCAL_BACKUP`: where the backup tree is stored locally.
-- `SYNC_DIRS`: top-level directories relative to `$HOME` to include.
+- `LOCAL_BACKUP`: where the backup tree is stored locally; it holds only the sources synced in the last run, so
+  anything else there (sources removed from the config or from `$HOME`) is deleted, also on the NAS. Configured
+  directories missing from `$HOME` are logged as a warning. It must not contain `$HOME`.
+- `SYNC_DIRS`: directories relative to `$HOME` to include; nested paths such as `.local/bin` work.
 - `SYNC_DOTFILES`: individual dotfiles to copy.
 - `SYNC_SECRETS`: sensitive config directories to preserve.
 - `CONFIG_DIR`: local config directory to include.
@@ -54,6 +56,8 @@ If you want to archive the rotated backup sets on a remote host:
    ```bash
    ./setup.sh --with-nas 192.168.1.50 --target-dir /mnt/backups/rotation --user admin
    ```
+
+Schedule the archive job (`--cron`) outside the NAS's own rotation of the backup sets and before any off-site upload of `archives/`: `tar` fails if a set is renamed or pruned while it is read.
 
 ## Notes
 
