@@ -50,6 +50,7 @@ mkdir -p "$LOCAL_BACKUP/dotfiles"
 for dir in $SYNC_DIRS; do
     if [[ -d "$HOME/$dir" ]]; then
         echo "[backup] Syncing directory: $dir"
+        mkdir -p "$LOCAL_BACKUP/$dir"
         run_rsync "${RSYNC_FLAGS[@]}" --exclude-from="$EXCLUDE_FILE" "$HOME/$dir/" "$LOCAL_BACKUP/$dir/"
     fi
 done
